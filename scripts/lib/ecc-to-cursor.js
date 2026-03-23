@@ -303,6 +303,94 @@ function renderFrontmatter(attributes) {
   return lines.join("\n");
 }
 
+function renderAgentFrontmatter(attributes) {
+  const orderedAttributes = {};
+  const rawName = String(attributes.name || "").trim();
+  const normalizedName = rawName.replace(/^agent-/u, "");
+
+  if (Array.isArray(attributes.tools) && attributes.tools.length > 0) {
+    orderedAttributes.tools = attributes.tools;
+  }
+
+  orderedAttributes.name = `agent-${normalizedName}`;
+
+  if (
+    attributes.model !== undefined &&
+    attributes.model !== null &&
+    String(attributes.model).trim() !== ""
+  ) {
+    orderedAttributes.model = String(attributes.model).trim();
+  }
+
+  if (
+    attributes.description !== undefined &&
+    attributes.description !== null &&
+    String(attributes.description).trim() !== ""
+  ) {
+    orderedAttributes.description = String(attributes.description).trim();
+  }
+
+  for (const [key, value] of Object.entries(attributes)) {
+    if (key === "tools" || key === "name" || key === "model" || key === "description") {
+      continue;
+    }
+
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (typeof value === "string" && value.trim() === "") {
+      continue;
+    }
+
+    if (Array.isArray(value) && value.length === 0) {
+      continue;
+    }
+
+    if (
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      Object.keys(value).length === 0
+    ) {
+      continue;
+    }
+
+    orderedAttributes[key] = value;
+  }
+
+  const lines = ["---"];
+
+  for (const [key, value] of Object.entries(orderedAttributes)) {
+    if (Array.isArray(value)) {
+      lines.push(`${key}: [${value.map(item => JSON.stringify(String(item))).join(", ")}]`);
+      continue;
+    }
+
+    if (typeof value === "boolean" || typeof value === "number") {
+      lines.push(`${key}: ${String(value)}`);
+      continue;
+    }
+
+    if (key === "name" || key === "model" || key === "description") {
+      lines.push(`${key}: ${String(value)}`);
+      continue;
+    }
+
+    if (typeof value === "object") {
+      lines.push(`${key}:`);
+      for (const [nestedKey, nestedValue] of Object.entries(value)) {
+        lines.push(`  ${nestedKey}: ${serializeValue(nestedValue)}`);
+      }
+      continue;
+    }
+
+    lines.push(`${key}: ${serializeValue(value)}`);
+  }
+
+  lines.push("---", "");
+  return lines.join("\n");
+}
+
 function firstHeading(body) {
   const match = body.match(/^#\s+(.+)$/mu);
   return match ? match[1].trim() : "";
@@ -669,7 +757,7 @@ function convertAgents({
 
     writeText(
       targetPath,
-      `${renderFrontmatter(outputAttributes)}${normalizeBodyContent(body)}\n`,
+      `${renderAgentFrontmatter(outputAttributes)}${normalizeBodyContent(body)}\n`,
     );
 
     converted.push({

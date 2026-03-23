@@ -1,6 +1,6 @@
 {
   "name": "ecc-to-cursor-converter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Convert everything-claude-code assets into Cursor plugin format.",
   "scripts": {
